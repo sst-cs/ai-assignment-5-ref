@@ -1,0 +1,129 @@
+name: Autograde Tool-Calling Agent
+
+on: [push, workflow_dispatch]
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      statuses: write
+      checks: write
+
+    steps:
+      - name: Checkout student submission
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout hidden tests
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: sst-cs/ai-assignment-5-tests
+          token: ${{ secrets.HIDDEN_TESTS_TOKEN }}
+          path: hidden-tests
+
+      - name: Verify hidden tests available
+        run: |
+          if [ ! -d hidden-tests/tests ]; then
+            echo "::error title=Hidden tests missing::Could not fetch the hidden tests."
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pytest
+
+      - name: Grader step 1 - Simple Lookups
+        id: lookup
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: 'Lookup Tasks (1 pt)'
+          setup-command: ''
+          command: 'python -m pytest hidden-tests/tests/test_agent.py -k "lookup" -q'
+          timeout: 10
+          max-score: 1
+
+      - name: Grader step 2 - Filter and Sort
+        id: filter_sort
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: 'Filter and Sort (2 pts)'
+          setup-command: ''
+          command: 'python -m pytest hidden-tests/tests/test_agent.py -k "filter_sort" -q'
+          timeout: 10
+          max-score: 2
+
+      - name: Grader step 3 - Aggregates
+        id: aggregate
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: 'Aggregates (2 pts)'
+          setup-command: ''
+          command: 'python -m pytest hidden-tests/tests/test_agent.py -k "aggregate" -q'
+          timeout: 10
+          max-score: 2
+
+      - name: Grader step 4 - Computed Dependencies
+        id: computed
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: 'Computed Dependencies (3 pts)'
+          setup-command: ''
+          command: 'python -m pytest hidden-tests/tests/test_agent.py -k "computed" -q'
+          timeout: 10
+          max-score: 3
+
+      - name: Grader step 5 - Cross Dataset & Error Handling
+        id: cross_error
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: 'Cross Dataset & Error Handling (2 pts)'
+          setup-command: ''
+          command: 'python -m pytest hidden-tests/tests/test_agent.py -k "cross_error" -q'
+          timeout: 10
+          max-score: 2
+
+      - name: Package Results
+        id: package
+        run: |
+          LUP=$(echo "${{steps.lookup.outputs.result}}" | base64 -d 2>/dev/null | jq '.tests[0].score // .score // 0')
+          FLT=$(echo "${{steps.filter_sort.outputs.result}}" | base64 -d 2>/dev/null | jq '.tests[0].score // .score // 0')
+          AGG=$(echo "${{steps.aggregate.outputs.result}}" | base64 -d 2>/dev/null | jq '.tests[0].score // .score // 0')
+          COM=$(echo "${{steps.computed.outputs.result}}" | base64 -d 2>/dev/null | jq '.tests[0].score // .score // 0')
+          ERR=$(echo "${{steps.cross_error.outputs.result}}" | base64 -d 2>/dev/null | jq '.tests[0].score // .score // 0')
+          
+          TOTAL=$(( ${LUP:-0} + ${FLT:-0} + ${AGG:-0} + ${COM:-0} + ${ERR:-0} ))
+          echo "Total Score: $TOTAL / 10"
+
+          DEADLINE_EPOCH=$(date -d "2026-07-05T18:59:00Z" +%s)
+          ZERO_EPOCH=$(date -d "2026-07-12T18:59:00Z" +%s)
+          LAST_CODE_ISO=$(git log --format="%cI" -- . ':(exclude).github/' 2>/dev/null | head -1)
+          [ -z "$LAST_CODE_ISO" ] && LAST_CODE_ISO=$(git log -1 --format=%cI)
+          LAST_CODE_EPOCH=$(date -d "$LAST_CODE_ISO" +%s 2>/dev/null || echo 0)
+          
+          if [ "$LAST_CODE_EPOCH" -gt "$ZERO_EPOCH" ]; then
+            TOTAL=0
+          elif [ "$LAST_CODE_EPOCH" -gt "$DEADLINE_EPOCH" ]; then
+            TOTAL=$(( TOTAL * 6 / 10 ))
+          fi
+
+          for i in $(seq 1 10); do
+            STATUS="fail"; SCORE_VAL=0
+            if [ $i -le $TOTAL ]; then STATUS="pass"; SCORE_VAL=1; fi
+            JSON="{\"version\":1,\"status\":\"$STATUS\",\"max_score\":1,\"tests\":[{\"name\":\"Requirement $i\",\"status\":\"$STATUS\",\"score\":$SCORE_VAL,\"max_score\":1}]}"
+            B64=$(echo -n "$JSON" | base64 -w 0)
+            echo "R${i}_RESULTS=$B64" >> $GITHUB_ENV
+          done
+
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        continue-on-error: true
+        with:
+          runners: r1,r2,r3,r4,r5,r6,r7,r8,r9,r10
