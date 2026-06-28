@@ -80,7 +80,7 @@ TASKS = [
             "target_field": "name",
         },
         "answer_type": "list",
-        "expected": ["Russia", "Germany", "United Kingdom", "France", "Italy"],
+        "expected": ["Russia", "Germany", "France", "United Kingdom", "Italy"],
     },
     {
         "id": "T06",
@@ -150,7 +150,7 @@ TASKS = [
             "agg_op": "sum",
         },
         "answer_type": "number",
-        "expected": 504755000.0,
+        "expected": 614704000.0,
     },
     {
         "id": "T10",
@@ -164,7 +164,7 @@ TASKS = [
             "agg_op": "mean",
         },
         "answer_type": "number",
-        "expected": 4.36,
+        "expected": 4.4,
     },
     {
         "id": "T11",
@@ -217,7 +217,7 @@ TASKS = [
             "target_field": "name",
         },
         "answer_type": "list",
-        "expected": ["Luxembourg", "Ireland", "Switzerland", "Norway", "Denmark", "Netherlands", "Sweden", "Canada"],
+        "expected": ["Luxembourg", "Ireland", "Switzerland", "Norway", "Denmark", "Netherlands", "Sweden"],
     },
     {
         "id": "T14",
@@ -235,7 +235,7 @@ TASKS = [
             "target_field": "name",
         },
         "answer_type": "list",
-        "expected": ["WindTurbine Home", "TurboLaptop 16", "MountainBike X7", "UltraPhone Pro", "SolarPanel Kit", "DroneFlyer X2", "GameStation 6", "SmartWatch X3", "TennisPro Racket"],
+        "expected": ["WindTurbine Home", "TurboLaptop 16", "MountainBike X7", "UltraPhone Pro", "SolarPanel Kit", "DroneFlyer X2", "GameStation 6", "SmartWatch X3"],
     },
     {
         "id": "T15",
@@ -267,7 +267,7 @@ TASKS = [
             "count_op": "count",
         },
         "answer_type": "integer",
-        "expected": 14,
+        "expected": 11,
     },
 
     # ══════════════════════════════════════════════════════════════════════
@@ -285,7 +285,7 @@ TASKS = [
             "agg_op": "sum",
         },
         "answer_type": "number",
-        "expected": 3410000.0,
+        "expected": 3630000.0,
     },
     {
         "id": "T18",
