@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: sst-cs/ai-assignment-5-tests
-          token: ${{ secrets.HIDDEN_TESTS_TOKEN }}
+          token: ${{ secrets.HIDDEN_TESTS_TOKEN || github.token }}
           path: hidden-tests
 
       - name: Verify hidden tests available
